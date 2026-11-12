@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a73e8">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon-192.png">
+    <title>ניהול תלמידים וצוות אופליין</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 650px; margin: 0 auto; }
+        h1 { font-size: 1.4rem; text-align: center; color: #1a73e8; margin-bottom: 15px; }
+        .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        
+        /* עיצוב כרטיסיית איש צוות מודגשת */
+        .staff-card { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(26,115,232,0.15); border-right: 5px solid #1a73e8; }
+        .staff-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d2e3fc; padding-bottom: 8px; margin-bottom: 8px; }
+        .staff-header h3 { margin: 0; font-size: 1.2rem; color: #1a73e8; }
+
+        /* עיצוב כרטיסיות תלמיד רגילות */
+        .student-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-right: 5px solid #34a853; }
+        .student-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
+        .student-header h3 { margin: 0; font-size: 1.15rem; color: #202124; }
+        
+        .student-details { font-size: 0.9rem; color: #5f6368; display: grid; grid-template-columns: 1fr; gap: 5px; }
+        
+        .phones-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .call-btn { background: #34a853; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
+        .call-btn:active { background: #2b8c44; }
+        
+        #file-upload-container { text-align: center; border: 2px dashed #1a73e8; padding: 30px 20px; border-radius: 12px; background: #e8f0fe; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .change-file-btn { background: #ea4335; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: white; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 כרטיסיות תלמידים וצוות</h1>
+
+    <!-- שלב א': טעינת קובץ ראשונית -->
+    <div id="file-upload-container" class="card" style="display: none;">
+        <p style="margin-top:0; font-weight: 500; color: #1a73e8;">בחר קובץ CSV של התלמידים והצוות:</p>
+        <input type="file" id="excelFile" accept=".csv,text/csv" onchange="handleFile(event)">
+    </div>
+
+    <!-- שלב ב': אזור החיפוש והתצוגה -->
+    <div id="app-content" style="display: none;">
+        <div class="top-bar">
+            <div id="resultsCount" style="font-size: 0.85rem; color: #5f6368; font-weight: 500;"></div>
+            <!-- כפתור החלפת קובץ -->
+            <button class="change-file-btn" onclick="resetApp()">🔄 החלף קובץ</button>
+        </div>
+
+        <div class="card" style="padding: 10px 15px;">
+            <input type="text" id="searchInput" placeholder="🔍 חיפוש לפי שם (למשל: קוריץ)..." oninput="filterStudents()">
+        </div>
+        
+        <div id="studentsList"></div>
+    </div>
+</div>
+
+<script>
+    let allStudents = [];
+
+    window.onload = function() {
+        const savedData = localStorage.getItem('students_data');
+        if (savedData) {
+            allStudents = JSON.parse(savedData);
+            document.getElementById('file-upload-container').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            displayStudents(allStudents);
+        } else {
+            document.getElementById('file-upload-container').style.display = 'block';
+        }
+    };
+
+
+    // קריאת CSV מקומי ללא ספרייה חיצונית או חיבור לאינטרנט.
+    function parseCSV(text) {
+        text = text.replace(/^\uFEFF/, '');
+        const firstLine = (text.split(/\r?\n/)[0] || '');
+        const candidates = [',', ';', '\t'];
+        let delimiter = ',', bestCount = -1;
+        for (const candidate of candidates) {
+            let count = 0, quoted = false;
+            for (let i = 0; i < firstLine.length; i++) {
+                if (firstLine[i] === '"') {
+                    if (quoted && firstLine[i + 1] === '"') i++;
+                    else quoted = !quoted;
+                } else if (!quoted && firstLine[i] === candidate) count++;
+            }
+            if (count > bestCount) { bestCount = count; delimiter = candidate; }
+        }
+        const rows = [];
+        let row = [], field = '', quoted = false;
+        for (let i = 0; i < text.length; i++) {
+            const ch = text[i];
+            if (quoted) {
+                if (ch === '"') {
+                    if (text[i + 1] === '"') { field += '"'; i++; }
+                    else quoted = false;
+                } else field += ch;
+            } else if (ch === '"' && field.length === 0) quoted = true;
+            else if (ch === delimiter) { row.push(field); field = ''; }
+            else if (ch === '\n' || ch === '\r') {
+                if (ch === '\r' && text[i + 1] === '\n') i++;
+                row.push(field);
+                if (row.some(v => v.trim() !== '')) rows.push(row);
+                row = []; field = '';
+            } else field += ch;
+        }
+        row.push(field);
+        if (row.some(v => v.trim() !== '')) rows.push(row);
+        if (rows.length < 2) return [];
+        const headers = rows[0].map(v => v.trim());
+        return rows.slice(1).map(values => {
+            const record = {};
+            headers.forEach((header, index) => {
+                if (header) record[header] = (values[index] ?? '').trim();
+            });
+            return record;
+        });
+    }
+
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csvText = new TextDecoder('utf-8').decode(e.target.result);
+            allStudents = parseCSV(csvText);
+            
+            if(allStudents.length > 0) {
+                localStorage.setItem('students_data', JSON.stringify(allStudents));
+                
+                document.getElementById('file-upload-container').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                displayStudents(allStudents);
+            } else {
+                alert('הקובץ נראה ריק או לא תקין.');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function generatePhoneButtons(phoneStr, labelPrefix) {
+        if (!phoneStr) return '';
+        const numbers = String(phoneStr).split(/[\s,;]+/);
+        let html = '';
+        
+        numbers.forEach(num => {
+            const cleanNum = num.trim();
+            if (cleanNum.length > 2) {
+                html += `<a href="tel:${cleanNum}" class="call-btn">📞 ${labelPrefix}: ${cleanNum}</a>`;
+            }
+        });
+        return html;
+    }
+
+    function displayStudents(students) {
+        const listDiv = document.getElementById('studentsList');
+        document.getElementById('resultsCount').innerText = `מציג ${students.length} תוצאות`;
+        listDiv.innerHTML = '';
+
+        if(students.length === 0) {
+            listDiv.innerHTML = '<div class="card" style="text-align:center; color:#888;">לא נמצאו תוצאות תואמות</div>';
+            return;
+        }
+
+        students.forEach(person => {
+            const classAndTeacher = String(person['כיתה ומחנך'] || '').toLowerCase();
+            const isStaff = classAndTeacher.includes('צוות') || classAndTeacher.includes('מורה') || classAndTeacher.includes('מחנך');
+            
+            const serialNum = person["מס'"] || '';
+            const lastName = person['שם משפחה'] || '';
+            const firstName = person['שם פרטי'] || '';
+            const fullName = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : 'ללא שם';
+            
+            const idNum = person['מס. ת.ז.'] || person["מס' ת.ז."] || person['ת.ז.'] || '';
+            const birthHeb = person['תאריך לידה עברי'] || '';
+            const birthEng = person['תאריך לידה לועזי'] || '';
+            const address = person['כתובת'] || '';
+            
+            const phone = person['טלפון'] || '';
+            const dadName = person['שם האב'] || '';
+            const dadMobile = person['סלולרי אב'] || '';
+            const dadId = person['ת.ז אב'] || '';
+            
+            const momName = person['שם האם'] || '';
+            const momMobile = person['סלולרי אם'] || '';
+            const momId = person['ת.ז אם'] || '';
+
+            const item = document.createElement('div');
+            item.className = isStaff ? 'staff-card' : 'student-card';
+            
+            let phonesHtml = '';
+            phonesHtml += generatePhoneButtons(phone, isStaff ? 'טלפון ישיר' : 'טלפון');
+            phonesHtml += generatePhoneButtons(dadMobile, isStaff ? 'נוסף 1' : `סלולרי אב (${dadName || 'אב'})`);
+            phonesHtml += generatePhoneButtons(momMobile, isStaff ? 'נוסף 2' : `סלולרי אם (${momName || 'אם'})`);
+
+            item.innerHTML = `
+                <div class="${isStaff ? 'staff-header' : 'student-header'}">
+                    <h3>${isStaff ? '👨‍🏫 <strong>[איש צוות]</strong> ' : '👤 '} ${fullName} ${serialNum ? '<span style="font-size:0.8rem; color:#888;">(מס\': ' + serialNum + ')</span>' : ''}</h3>
+                </div>
+                <div class="student-details">
+                    ${classAndTeacher ? `<div>🏫 <strong>תפקיד / כיתה:</strong> ${person['כיתה ומחנך']}</div>` : ''}
+                    ${idNum ? `<div>🪪 <strong>ת.ז:</strong> ${idNum}</div>` : ''}
+                    ${(birthHeb || birthEng) ? `<div>🎂 <strong>תאריך לידה:</strong> ${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''}</div>` : ''}
+                    ${address ? `<div>🏠 <strong>כתובת:</strong> ${address}</div>` : ''}
+                    ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''}</div>` : ''}
+                    ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''}</div>` : ''}
+                    ${phonesHtml ? `<div class="phones-row">${phonesHtml}</div>` : ''}
+                </div>
+            `;
+            listDiv.appendChild(item);
+        });
+    }
+
+    function filterStudents() {
+        const queryText = document.getElementById('searchInput').value.toLowerCase().trim();
+        if (!queryText) {
+            displayStudents(allStudents);
+            return;
+        }
+
+        const searchWords = queryText.split(/\s+/);
+
+        // מיון חכם לפי עדיפויות מבוקשות:
+        // 1. קודם כל: התאמה בשם הפרטי או שם המשפחה.
+        // 2. שנית: התאמה בשאר שדות התלמיד.
+        // 3. אחרון חביב: התאמה בשם המחנך/צוות.
+        
+        const scoredStudents = allStudents.map(student => {
+            const firstName = String(student['שם פרטי'] || '').toLowerCase();
+            const lastName = String(student['שם משפחה'] || '').toLowerCase();
+            const fullName = `${firstName} ${lastName} ${lastName} ${firstName}`;
+            const teacherField = String(student['כיתה ומחנך'] || '').toLowerCase();
+            const fullText = Object.values(student).join(' ').toLowerCase();
+
+            let score = 0;
+            const matchesAll = searchWords.every(word => fullText.includes(word));
+            
+            if (!matchesAll) return { student: student, score: -1 };
+
+            // האם מילות החיפוש נמצאות בשם הפרטי או המשפחה? (עדיפות עליונה)
+            const matchesName = searchWords.every(word => fullName.includes(word));
+            if (matchesName) {
+                score += 100;
+                // אם זה גם איש צוות וגם בשם - נקבל עדיפות גבוהה מאוד
+                if (teacherField.includes('צוות') || teacherField.includes('מורה') || teacherField.includes('מחנך')) {
+                    score += 50; 
+                }
+            } else {
+                // האם זה נמצא רק בשדה המחנך/צוות ולא בשם עצמו? (עדיפות נמוכה/אחרונה)
+                const matchesTeacherOnly = searchWords.every(word => teacherField.includes(word));
+                if (matchesTeacherOnly) {
+                    score += 10; // ציון נמוך כדי שיופיע בסוף
+                } else {
+                    score += 50; // שאר השדות (כמו כתובת, ת.ז וכו')
+                }
+            }
+
+            return { student: student, score: score };
+        });
+
+        // סינון רק מי שעבר את החיפוש ומיון מהציון הגבוה לנמוך
+        const filtered = scoredStudents
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(item => item.student);
+
+        displayStudents(filtered);
+    }
+
+    function resetApp() {
+        if(confirm('האם אתה בטוח שברצונך להחליף קובץ? הנתונים הקודמים יוחלפו.')) {
+            localStorage.removeItem('students_data');
+            document.getElementById('file-upload-container').style.display = 'block';
+            document.getElementById('app-content').style.display = 'none';
+            document.getElementById('excelFile').value = '';
+            allStudents = [];
+        }
+    }
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn(err));
+    });
+}
+</script>
+</body>
+</html>
