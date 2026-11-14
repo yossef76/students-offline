@@ -12,20 +12,34 @@
         .container { max-width: 650px; margin: 0 auto; }
         h1 { font-size: 1.4rem; text-align: center; color: #1a73e8; margin-bottom: 15px; }
         .card { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        input { width: 100%; padding: 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         
-        /* עיצוב כרטיסיית איש צוות מודגשת */
+        .search-wrapper { position: relative; display: flex; align-items: center; }
+        .search-wrapper input { width: 100%; padding: 12px 12px 12px 38px; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .clear-search-btn { position: absolute; left: 10px; background: #e0e0e0; color: #555; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 0.85rem; cursor: pointer; display: none; align-items: center; justify-content: center; font-weight: bold; }
+        
         .staff-card { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(26,115,232,0.15); border-right: 5px solid #1a73e8; }
         .staff-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d2e3fc; padding-bottom: 8px; margin-bottom: 8px; }
         .staff-header h3 { margin: 0; font-size: 1.2rem; color: #1a73e8; }
 
-        /* עיצוב כרטיסיות תלמיד רגילות */
         .student-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-right: 5px solid #34a853; }
         .student-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
         .student-header h3 { margin: 0; font-size: 1.15rem; color: #202124; }
         
-        .student-details { font-size: 0.9rem; color: #5f6368; display: grid; grid-template-columns: 1fr; gap: 5px; }
+        .card-left { background: #fafafa !important; border-right: 5px solid #ea4335 !important; opacity: 0.85; }
+        .card-left h3 { color: #5f6368 !important; }
+
+        .card-higher-class { background: #fef7e0 !important; border-right: 5px solid #f9ab00 !important; }
+        .card-higher-class h3 { color: #b06000 !important; }
+
+        .badge-status-left { background: #fce8e6; color: #c5221f; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
+        .badge-status-higher { background: #fef3d6; color: #b06000; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
+        .badge-age { background: #e8f0fe; color: #1a73e8; padding: 2px 8px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-right: 5px; }
+
+        .student-details { font-size: 0.9rem; color: #5f6368; display: grid; grid-template-columns: 1fr; gap: 6px; }
         
+        .siblings-btn { background: #f1f3f4; color: #1a73e8; border: 1px solid #d2e3fc; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; }
+        .siblings-btn:active { background: #d2e3fc; }
+
         .phones-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         .call-btn { background: #34a853; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
         .call-btn:active { background: #2b8c44; }
@@ -33,6 +47,9 @@
         #file-upload-container { text-align: center; border: 2px dashed #1a73e8; padding: 30px 20px; border-radius: 12px; background: #e8f0fe; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .change-file-btn { background: #ea4335; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: white; font-weight: 500; }
+        
+        .family-filter-banner { background: #e8f0fe; border: 1px solid #1a73e8; color: #1a73e8; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; display: none; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 600; }
+        .family-filter-banner button { background: #1a73e8; color: white; border: none; padding: 4px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -40,22 +57,27 @@
 <div class="container">
     <h1>📚 כרטיסיות תלמידים וצוות</h1>
 
-    <!-- שלב א': טעינת קובץ ראשונית -->
     <div id="file-upload-container" class="card" style="display: none;">
         <p style="margin-top:0; font-weight: 500; color: #1a73e8;">בחר קובץ CSV של התלמידים והצוות:</p>
         <input type="file" id="excelFile" accept=".csv,text/csv" onchange="handleFile(event)">
     </div>
 
-    <!-- שלב ב': אזור החיפוש והתצוגה -->
     <div id="app-content" style="display: none;">
         <div class="top-bar">
             <div id="resultsCount" style="font-size: 0.85rem; color: #5f6368; font-weight: 500;"></div>
-            <!-- כפתור החלפת קובץ -->
             <button class="change-file-btn" onclick="resetApp()">🔄 החלף קובץ</button>
         </div>
 
         <div class="card" style="padding: 10px 15px;">
-            <input type="text" id="searchInput" placeholder="🔍 חיפוש לפי שם (למשל: קוריץ)..." oninput="filterStudents()">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" placeholder="🔍 חיפוש לפי שם, טלפון, ת.ז..." oninput="filterStudents()">
+                <button id="clearSearchBtn" class="clear-search-btn" onclick="clearSearch()" title="נקה חיפוש">✖</button>
+            </div>
+        </div>
+
+        <div id="familyFilterBanner" class="family-filter-banner">
+            <span id="familyFilterText">מציג אחים במשפחה</span>
+            <button onclick="clearSearch()">הצג הכל</button>
         </div>
         
         <div id="studentsList"></div>
@@ -65,6 +87,7 @@
 <script>
     let allStudents = [];
 
+    // 1. טעינת נתונים ראשונית בעליית הדף מתוך הזיכרון המקומי (localStorage)
     window.onload = function() {
         const savedData = localStorage.getItem('students_data');
         if (savedData) {
@@ -77,8 +100,7 @@
         }
     };
 
-
-    // קריאת CSV מקומי ללא ספרייה חיצונית או חיבור לאינטרנט.
+    // 2. פונקציה לניתוח טקסט CSV והמרה למערך אובייקטים
     function parseCSV(text) {
         text = text.replace(/^\uFEFF/, '');
         const firstLine = (text.split(/\r?\n/)[0] || '');
@@ -125,6 +147,7 @@
         });
     }
 
+    // 3. טיפול בבחירת קובץ חדש מצד המשתמש
     function handleFile(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -132,14 +155,19 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             const csvText = new TextDecoder('utf-8').decode(e.target.result);
+            
+            localStorage.removeItem('students_data');
             allStudents = parseCSV(csvText);
             
             if(allStudents.length > 0) {
                 localStorage.setItem('students_data', JSON.stringify(allStudents));
-                
                 document.getElementById('file-upload-container').style.display = 'none';
                 document.getElementById('app-content').style.display = 'block';
                 displayStudents(allStudents);
+                document.getElementById('searchInput').value = '';
+                document.getElementById('clearSearchBtn').style.display = 'none';
+                document.getElementById('familyFilterBanner').style.display = 'none';
+                alert('הקובץ החדש נטען בהצלחה וכל הנתונים הישנים נוקו!');
             } else {
                 alert('הקובץ נראה ריק או לא תקין.');
             }
@@ -147,11 +175,11 @@
         reader.readAsArrayBuffer(file);
     }
 
+    // 4. יצירת כפתורי חיוג מהיר לטלפונים
     function generatePhoneButtons(phoneStr, labelPrefix) {
         if (!phoneStr) return '';
         const numbers = String(phoneStr).split(/[\s,;]+/);
         let html = '';
-        
         numbers.forEach(num => {
             const cleanNum = num.trim();
             if (cleanNum.length > 2) {
@@ -161,6 +189,139 @@
         return html;
     }
 
+    // 5. ניקוי מספרים ותיקון פורמט מדעי של אקסל
+    function cleanNumeric(val) {
+        if (!val) return '';
+        let s = String(val).trim();
+        if (s.includes('E+') || s.includes('e+')) {
+            const num = Number(s);
+            if (!isNaN(num)) {
+                return String(Math.round(num));
+            }
+        }
+        return s.replace(/\D/g, '').replace(/^0+/, '');
+    }
+
+    // 6. הצגת אחים ובני משפחה לפי ת.ז של הורים או טלפון משותף
+    function showSiblingsByParent(dadId, momId, homePhone, dadMobile, momMobile, familyLabel) {
+        const targetDadId = cleanNumeric(dadId);
+        const targetMomId = cleanNumeric(momId);
+        const targetHomePhone = cleanNumeric(homePhone);
+        const targetDadMobile = cleanNumeric(dadMobile);
+        const targetMomMobile = cleanNumeric(momMobile);
+
+        const siblings = allStudents.filter(person => {
+            const pDadId = cleanNumeric(person['ת.ז אב']);
+            const pMomId = cleanNumeric(person['ת.ז אם']);
+            const pHomePhone = cleanNumeric(person['טלפון']);
+            const pDadMobile = cleanNumeric(person['סלולרי אב']);
+            const pMomMobile = cleanNumeric(person['סלולרי אם']);
+
+            if (targetDadId && targetDadId.length >= 5 && pDadId === targetDadId) return true;
+            if (targetMomId && targetMomId.length >= 5 && pMomId === targetMomId) return true;
+            if (targetHomePhone && targetHomePhone.length >= 7 && pHomePhone === targetHomePhone) return true;
+            if (targetDadMobile && targetDadMobile.length >= 7 && pDadMobile === targetDadMobile) return true;
+            if (targetMomMobile && targetMomMobile.length >= 7 && pMomMobile === targetMomMobile) return true;
+            return false;
+        });
+
+        document.getElementById('searchInput').value = '';
+        document.getElementById('clearSearchBtn').style.display = 'flex';
+        const banner = document.getElementById('familyFilterBanner');
+        banner.style.display = 'flex';
+        document.getElementById('familyFilterText').innerText = `👨‍👩‍👧‍👦 מציג ${siblings.length} בני משפחה (${familyLabel})`;
+
+        displayStudents(siblings);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 7. איפוס חלון החיפוש והצגת כלל הרשימה
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('clearSearchBtn').style.display = 'none';
+        document.getElementById('familyFilterBanner').style.display = 'none';
+        displayStudents(allStudents);
+    }
+
+    // 8. חישוב גיל מדויק בפורמט שנים.חודשים (תומך בפורמטים: 15 09 2013, 5.5.2003, 05/05/2003, מספרים סידוריים ועוד)
+    function calculateAge(birthDateStr) {
+        if (!birthDateStr) return '';
+        let cleanDate = String(birthDateStr).trim().split(' ')[0] ? String(birthDateStr).trim() : '';
+        let birthDate = null;
+
+        // תמיכה במספר סידורי של אקסל
+        if (!isNaN(cleanDate) && cleanDate.length >= 4 && cleanDate.length <= 6 && !cleanDate.includes(' ') && !cleanDate.includes('.')) {
+            const serial = Number(cleanDate);
+            const utcDays = serial - 25569;
+            birthDate = new Date(utcDays * 86400 * 1000);
+        } else {
+            // התאמה לכל מבנה תאריך (כולל מפרידים כמו לוכסן, נקודה, מקף או רווחים כמו 15 09 2013)
+            const spaceMatch = cleanDate.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})$/);
+            const dmyMatch = cleanDate.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
+            const ymdMatch = cleanDate.match(/^(\d{2,4})[/.-](\d{1,2})[/.-](\d{1,2})$/);
+
+            if (spaceMatch) {
+                let day = parseInt(spaceMatch[1], 10);
+                let month = parseInt(spaceMatch[2], 10) - 1;
+                let year = parseInt(spaceMatch[3], 10);
+                if (year < 100) year += year > 30 ? 1900 : 2000;
+                birthDate = new Date(year, month, day);
+            } else if (ymdMatch && ymdMatch[1].length === 4) {
+                birthDate = new Date(parseInt(ymdMatch[1], 10), parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
+            } else if (dmyMatch) {
+                let day = parseInt(dmyMatch[1], 10);
+                let month = parseInt(dmyMatch[2], 10) - 1;
+                let year = parseInt(dmyMatch[3], 10);
+                if (year < 100) year += year > 30 ? 1900 : 2000;
+                birthDate = new Date(year, month, day);
+            } else if (ymdMatch) {
+                let year = parseInt(ymdMatch[1], 10);
+                if (year < 100) year += year > 30 ? 1900 : 2000;
+                birthDate = new Date(year, parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
+            } else {
+                const parsed = new Date(cleanDate);
+                if (!isNaN(parsed.getTime())) birthDate = parsed;
+            }
+        }
+
+        if (!birthDate || isNaN(birthDate.getTime())) return '';
+
+        const today = new Date();
+        let totalMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+        if (today.getDate() < birthDate.getDate()) totalMonths--;
+
+        if (totalMonths <= 0) return '';
+
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+
+        return `${years}.${months}`;
+    }
+
+    // 9. זיהוי האם מדובר בכיתת יש"ק או יש"ג
+    function isYeshikOrYeshig(classStr) {
+        if (!classStr) return false;
+        const normalized = String(classStr).trim().toLowerCase().replace(/["״׳']/g, '"');
+        return normalized.includes('יש"ק') || normalized.includes('ישק') || 
+               normalized.includes('יש"ג') || normalized.includes('ישג');
+    }
+
+    // 10. זיהוי האם התלמיד נמצא בכיתה גבוהה מחית (ט' ומעלה)
+    function isHigherThanHet(classStr) {
+        if (!classStr) return false;
+        const s = String(classStr).trim().toLowerCase();
+        if (isYeshikOrYeshig(s)) return false;
+        
+        const higherKeywords = ['ט', 'י', 'יא', 'יב', 'ט\'', 'י\'', 'יט', 'כ'];
+        for (let kw of higherKeywords) {
+            if (s === kw || s.includes('ית ' + kw) || s.includes('כיתה ' + kw) || s.startsWith(kw + ' ') || s.endsWith(' ' + kw)) return true;
+        }
+        const match = s.match(/\d+/);
+        if (match && parseInt(match[0], 10) > 8) return true;
+        return false;
+    }
+
+    // 11. הלב המרכזי: יצירה והצגה דינמית של כרטיסיות התלמידים והצוות על המסך
     function displayStudents(students) {
         const listDiv = document.getElementById('studentsList');
         document.getElementById('resultsCount').innerText = `מציג ${students.length} תוצאות`;
@@ -171,18 +332,57 @@
             return;
         }
 
-        students.forEach(person => {
+        const sortedStudents = [...students].sort((a, b) => {
+            const statusA = String(a['סטטוס'] || '').trim();
+            const statusB = String(b['סטטוס'] || '').trim();
+            const classA = String(a['כיתה ומחנך'] || '');
+            const classB = String(b['כיתה ומחנך'] || '');
+
+            const isLeftA = statusA.includes('עזב') || statusA.includes('סיים') || isYeshikOrYeshig(classA);
+            const isLeftB = statusB.includes('עזב') || statusB.includes('סיים') || isYeshikOrYeshig(classB);
+            const isHighA = isHigherThanHet(classA);
+            const isHighB = isHigherThanHet(classB);
+
+            return (isLeftA ? 2 : (isHighA ? 1 : 0)) - (isLeftB ? 2 : (isHighB ? 1 : 0));
+        });
+
+        let activeCounter = 1;
+
+        sortedStudents.forEach(person => {
             const classAndTeacher = String(person['כיתה ומחנך'] || '').toLowerCase();
             const isStaff = classAndTeacher.includes('צוות') || classAndTeacher.includes('מורה') || classAndTeacher.includes('מחנך');
             
-            const serialNum = person["מס'"] || '';
+            const statusVal = String(person['סטטוס'] || '').trim();
+            const isYeshikOrYeshigVal = isYeshikOrYeshig(person['כיתה ומחנך']);
+            const isLeft = statusVal.includes('עזב') || statusVal.includes('סיים') || statusVal.includes('לא פעיל') || isYeshikOrYeshigVal;
+            const isHigherClass = !isLeft && isHigherThanHet(person['כיתה ומחנך']);
+            const isActive = !isLeft && !isHigherClass;
+
+            const displayNum = isActive ? activeCounter++ : '';
+
             const lastName = person['שם משפחה'] || '';
             const firstName = person['שם פרטי'] || '';
             const fullName = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : 'ללא שם';
             
-            const idNum = person['מס. ת.ז.'] || person["מס' ת.ז."] || person['ת.ז.'] || '';
+            const rawId = person['מס. ת.ז.'] || person["מס' ת.ז."] || person['ת.ז.'] || '';
+            const idNum = cleanNumeric(rawId) || rawId;
+
             const birthHeb = person['תאריך לידה עברי'] || '';
-            const birthEng = person['תאריך לידה לועזי'] || '';
+            
+            // חיפוש חכם ואוטומטי של עמודת תאריך הלידה בקובץ
+            let birthEng = '';
+            for (let key in person) {
+                if (key.includes('לידה') && !key.includes('עברי') && !key.includes('הורה')) {
+                    birthEng = person[key];
+                    break;
+                }
+            }
+            if (!birthEng) {
+                birthEng = person['תאריך לידה'] || person['תאריך לידה לועזי'] || person['ת. לידה'] || '';
+            }
+
+            const ageStr = calculateAge(birthEng); // חישוב הגיל בפועל
+
             const address = person['כתובת'] || '';
             
             const phone = person['טלפון'] || '';
@@ -195,24 +395,55 @@
             const momId = person['ת.ז אם'] || '';
 
             const item = document.createElement('div');
-            item.className = isStaff ? 'staff-card' : 'student-card';
+            
+            let cardClass = isStaff ? 'staff-card' : 'student-card';
+            if (isLeft) cardClass += ' card-left';
+            else if (isHigherClass) cardClass += ' card-higher-class';
+            item.className = cardClass;
             
             let phonesHtml = '';
             phonesHtml += generatePhoneButtons(phone, isStaff ? 'טלפון ישיר' : 'טלפון');
             phonesHtml += generatePhoneButtons(dadMobile, isStaff ? 'נוסף 1' : `סלולרי אב (${dadName || 'אב'})`);
             phonesHtml += generatePhoneButtons(momMobile, isStaff ? 'נוסף 2' : `סלולרי אם (${momName || 'אם'})`);
 
+            let statusBadgeHtml = '';
+            if (isYeshikOrYeshigVal) {
+                statusBadgeHtml = `<span class="badge-status-left">🚫 ${person['כיתה ומחנך']}</span>`;
+            } else if (isLeft) {
+                statusBadgeHtml = `<span class="badge-status-left">🚫 עזב / סיים</span>`;
+            } else if (isHigherClass) {
+                statusBadgeHtml = `<span class="badge-status-higher">🎓 ${person['כיתה ומחנך']}</span>`;
+            }
+
+            const safeDadId = dadId.replace(/'/g, "\\'");
+            const safeMomId = momId.replace(/'/g, "\\'");
+            const safePhone = phone.replace(/'/g, "\\'");
+            const safeDadMob = dadMobile.replace(/'/g, "\\'");
+            const safeMomMob = momMobile.replace(/'/g, "\\'");
+            const safeLast = (lastName || fullName).replace(/'/g, "\\'");
+
+            const hasFamilyKey = !isStaff && (dadId || momId || phone || dadMobile || momMobile);
+            const siblingsActionBtn = hasFamilyKey 
+                ? `<button class="siblings-btn" onclick="showSiblingsByParent('${safeDadId}', '${safeMomId}', '${safePhone}', '${safeDadMob}', '${safeMomMob}', 'משפחת ${safeLast}')">👨‍👩‍👧‍👦 הצג אחים</button>` 
+                : '';
+
             item.innerHTML = `
                 <div class="${isStaff ? 'staff-header' : 'student-header'}">
-                    <h3>${isStaff ? '👨‍🏫 <strong>[איש צוות]</strong> ' : '👤 '} ${fullName} ${serialNum ? '<span style="font-size:0.8rem; color:#888;">(מס\': ' + serialNum + ')</span>' : ''}</h3>
+                    <h3>
+                        ${isStaff ? '👨‍🏫 <strong>[איש צוות]</strong> ' : '👤 '} 
+                        ${fullName} 
+                        ${statusBadgeHtml}
+                        ${displayNum ? '<span style="font-size:0.8rem; color:#888;">(מס\': ' + displayNum + ')</span>' : ''}
+                    </h3>
                 </div>
                 <div class="student-details">
-                    ${classAndTeacher ? `<div>🏫 <strong>תפקיד / כיתה:</strong> ${person['כיתה ומחנך']}</div>` : ''}
+                    ${classAndTeacher ? `<div>🏫 <strong>${isStaff ? 'תפקיד / כיתה:' : 'כיתה ומחנך:'}</strong> ${person['כיתה ומחנך']}</div>` : ''}
                     ${idNum ? `<div>🪪 <strong>ת.ז:</strong> ${idNum}</div>` : ''}
-                    ${(birthHeb || birthEng) ? `<div>🎂 <strong>תאריך לידה:</strong> ${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''}</div>` : ''}
+                    ${(birthHeb || birthEng || ageStr) ? `<div>🎂 <strong>תאריך לידה:</strong> ${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''} ${ageStr ? '<span class="badge-age">גיל: ' + ageStr + '</span>' : ''}</div>` : ''}
                     ${address ? `<div>🏠 <strong>כתובת:</strong> ${address}</div>` : ''}
-                    ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''}</div>` : ''}
-                    ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''}</div>` : ''}
+                    ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''} ${siblingsActionBtn}</div>` : ''}
+                    ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''} ${!dadName ? siblingsActionBtn : ''}</div>` : ''}
+                    ${!isStaff && !dadName && !momName && hasFamilyKey ? `<div>${siblingsActionBtn}</div>` : ''}
                     ${phonesHtml ? `<div class="phones-row">${phonesHtml}</div>` : ''}
                 </div>
             `;
@@ -220,62 +451,49 @@
         });
     }
 
+    // 12. ניקוי טקסט חיפוש והסרת תווים מיוחדים
+    function normalizeSearchText(str) {
+        return String(str || '').toLowerCase().replace(/["״׳']/g, '').replace(/\s+/g, ' ').trim();
+    }
+
+    // 13. סינון וחיפוש תלמידים בזמן אמת לפי קריטריונים שונים
     function filterStudents() {
-        const queryText = document.getElementById('searchInput').value.toLowerCase().trim();
+        document.getElementById('familyFilterBanner').style.display = 'none';
+        const rawQuery = document.getElementById('searchInput').value;
+        const queryText = normalizeSearchText(rawQuery);
+        
+        document.getElementById('clearSearchBtn').style.display = rawQuery.trim() ? 'flex' : 'none';
+
         if (!queryText) {
             displayStudents(allStudents);
             return;
         }
 
         const searchWords = queryText.split(/\s+/);
-
-        // מיון חכם לפי עדיפויות מבוקשות:
-        // 1. קודם כל: התאמה בשם הפרטי או שם המשפחה.
-        // 2. שנית: התאמה בשאר שדות התלמיד.
-        // 3. אחרון חביב: התאמה בשם המחנך/צוות.
-        
         const scoredStudents = allStudents.map(student => {
-            const firstName = String(student['שם פרטי'] || '').toLowerCase();
-            const lastName = String(student['שם משפחה'] || '').toLowerCase();
+            const firstName = normalizeSearchText(student['שם פרטי']);
+            const lastName = normalizeSearchText(student['שם משפחה']);
             const fullName = `${firstName} ${lastName} ${lastName} ${firstName}`;
-            const teacherField = String(student['כיתה ומחנך'] || '').toLowerCase();
-            const fullText = Object.values(student).join(' ').toLowerCase();
+            const teacherField = normalizeSearchText(student['כיתה ומחנך']);
+            const fullText = normalizeSearchText(Object.values(student).join(' '));
 
             let score = 0;
-            const matchesAll = searchWords.every(word => fullText.includes(word));
-            
-            if (!matchesAll) return { student: student, score: -1 };
+            if (!searchWords.every(word => fullText.includes(word))) return { student: student, score: -1 };
 
-            // האם מילות החיפוש נמצאות בשם הפרטי או המשפחה? (עדיפות עליונה)
-            const matchesName = searchWords.every(word => fullName.includes(word));
-            if (matchesName) {
+            if (searchWords.every(word => fullName.includes(word))) {
                 score += 100;
-                // אם זה גם איש צוות וגם בשם - נקבל עדיפות גבוהה מאוד
-                if (teacherField.includes('צוות') || teacherField.includes('מורה') || teacherField.includes('מחנך')) {
-                    score += 50; 
-                }
+                if (teacherField.includes('צוות') || teacherField.includes('מורה') || teacherField.includes('מחנך')) score += 50; 
             } else {
-                // האם זה נמצא רק בשדה המחנך/צוות ולא בשם עצמו? (עדיפות נמוכה/אחרונה)
-                const matchesTeacherOnly = searchWords.every(word => teacherField.includes(word));
-                if (matchesTeacherOnly) {
-                    score += 10; // ציון נמוך כדי שיופיע בסוף
-                } else {
-                    score += 50; // שאר השדות (כמו כתובת, ת.ז וכו')
-                }
+                score += searchWords.every(word => teacherField.includes(word)) ? 10 : 50;
             }
-
             return { student: student, score: score };
         });
 
-        // סינון רק מי שעבר את החיפוש ומיון מהציון הגבוה לנמוך
-        const filtered = scoredStudents
-            .filter(item => item.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .map(item => item.student);
-
+        const filtered = scoredStudents.filter(item => item.score > 0).sort((a, b) => b.score - a.score).map(item => item.student);
         displayStudents(filtered);
     }
 
+    // 14. איפוס המערכת ומחיקת נתונים לטובת החלפת קובץ
     function resetApp() {
         if(confirm('האם אתה בטוח שברצונך להחליף קובץ? הנתונים הקודמים יוחלפו.')) {
             localStorage.removeItem('students_data');
@@ -287,8 +505,8 @@
     }
 </script>
 
-
 <script>
+// 15. רישום Service Worker לתמיכה בעבודה אופליין מלאה
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.warn(err));
