@@ -33,13 +33,15 @@
 
         .badge-status-left { background: #fce8e6; color: #c5221f; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
         .badge-status-higher { background: #fef3d6; color: #b06000; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
-        .badge-age { background: #e8f0fe; color: #1a73e8; padding: 2px 8px; font-size: 0.8rem; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-right: 5px; }
+        
+        /* עיצוב משודרג ומכווץ מעט לתגיות גיל וכפתור אחים כדי שיישבו באותה שורה */
+        .birthdate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+        .badge-age { background: #e8f0fe; color: #1a73e8; padding: 2px 6px; font-size: 0.75rem; border-radius: 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
+        .siblings-btn { background: #f1f3f4; color: #1a73e8; border: 1px solid #d2e3fc; padding: 2px 6px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
+        .siblings-btn:active { background: #d2e3fc; }
 
         .student-details { font-size: 0.9rem; color: #5f6368; display: grid; grid-template-columns: 1fr; gap: 6px; }
         
-        .siblings-btn { background: #f1f3f4; color: #1a73e8; border: 1px solid #d2e3fc; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; margin-right: 6px; }
-        .siblings-btn:active { background: #d2e3fc; }
-
         .phones-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
         .call-btn { background: #34a853; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 500; }
         .call-btn:active { background: #2b8c44; }
@@ -87,7 +89,6 @@
 <script>
     let allStudents = [];
 
-    // 1. טעינת נתונים ראשונית בעליית הדף מתוך הזיכרון המקומי (localStorage)
     window.onload = function() {
         const savedData = localStorage.getItem('students_data');
         if (savedData) {
@@ -100,7 +101,6 @@
         }
     };
 
-    // 2. פונקציה לניתוח טקסט CSV והמרה למערך אובייקטים
     function parseCSV(text) {
         text = text.replace(/^\uFEFF/, '');
         const firstLine = (text.split(/\r?\n/)[0] || '');
@@ -147,7 +147,6 @@
         });
     }
 
-    // 3. טיפול בבחירת קובץ חדש מצד המשתמש
     function handleFile(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -175,7 +174,6 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // 4. יצירת כפתורי חיוג מהיר לטלפונים
     function generatePhoneButtons(phoneStr, labelPrefix) {
         if (!phoneStr) return '';
         const numbers = String(phoneStr).split(/[\s,;]+/);
@@ -189,20 +187,16 @@
         return html;
     }
 
-    // 5. ניקוי מספרים ותיקון פורמט מדעי של אקסל
     function cleanNumeric(val) {
         if (!val) return '';
         let s = String(val).trim();
         if (s.includes('E+') || s.includes('e+')) {
             const num = Number(s);
-            if (!isNaN(num)) {
-                return String(Math.round(num));
-            }
+            if (!isNaN(num)) return String(Math.round(num));
         }
         return s.replace(/\D/g, '').replace(/^0+/, '');
     }
 
-    // 6. הצגת אחים ובני משפחה לפי ת.ז של הורים או טלפון משותף
     function showSiblingsByParent(dadId, momId, homePhone, dadMobile, momMobile, familyLabel) {
         const targetDadId = cleanNumeric(dadId);
         const targetMomId = cleanNumeric(momId);
@@ -235,7 +229,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 7. איפוס חלון החיפוש והצגת כלל הרשימה
     function clearSearch() {
         document.getElementById('searchInput').value = '';
         document.getElementById('clearSearchBtn').style.display = 'none';
@@ -243,45 +236,23 @@
         displayStudents(allStudents);
     }
 
-    // 8. חישוב גיל מדויק בפורמט שנים.חודשים (תומך בפורמטים: 15 09 2013, 5.5.2003, 05/05/2003, מספרים סידוריים ועוד)
     function calculateAge(birthDateStr) {
         if (!birthDateStr) return '';
-        let cleanDate = String(birthDateStr).trim().split(' ')[0] ? String(birthDateStr).trim() : '';
+        const cleanDate = String(birthDateStr).trim();
         let birthDate = null;
 
-        // תמיכה במספר סידורי של אקסל
-        if (!isNaN(cleanDate) && cleanDate.length >= 4 && cleanDate.length <= 6 && !cleanDate.includes(' ') && !cleanDate.includes('.')) {
-            const serial = Number(cleanDate);
-            const utcDays = serial - 25569;
-            birthDate = new Date(utcDays * 86400 * 1000);
-        } else {
-            // התאמה לכל מבנה תאריך (כולל מפרידים כמו לוכסן, נקודה, מקף או רווחים כמו 15 09 2013)
-            const spaceMatch = cleanDate.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{2,4})$/);
-            const dmyMatch = cleanDate.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/);
-            const ymdMatch = cleanDate.match(/^(\d{2,4})[/.-](\d{1,2})[/.-](\d{1,2})$/);
+        const dmyMatch = cleanDate.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
+        const ymdMatch = cleanDate.match(/^(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})/);
 
-            if (spaceMatch) {
-                let day = parseInt(spaceMatch[1], 10);
-                let month = parseInt(spaceMatch[2], 10) - 1;
-                let year = parseInt(spaceMatch[3], 10);
-                if (year < 100) year += year > 30 ? 1900 : 2000;
-                birthDate = new Date(year, month, day);
-            } else if (ymdMatch && ymdMatch[1].length === 4) {
-                birthDate = new Date(parseInt(ymdMatch[1], 10), parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
-            } else if (dmyMatch) {
-                let day = parseInt(dmyMatch[1], 10);
-                let month = parseInt(dmyMatch[2], 10) - 1;
-                let year = parseInt(dmyMatch[3], 10);
-                if (year < 100) year += year > 30 ? 1900 : 2000;
-                birthDate = new Date(year, month, day);
-            } else if (ymdMatch) {
-                let year = parseInt(ymdMatch[1], 10);
-                if (year < 100) year += year > 30 ? 1900 : 2000;
-                birthDate = new Date(year, parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
-            } else {
-                const parsed = new Date(cleanDate);
-                if (!isNaN(parsed.getTime())) birthDate = parsed;
-            }
+        if (ymdMatch) {
+            birthDate = new Date(parseInt(ymdMatch[1], 10), parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
+        } else if (dmyMatch) {
+            let year = parseInt(dmyMatch[3], 10);
+            if (year < 100) year += year > 30 ? 1900 : 2000;
+            birthDate = new Date(year, parseInt(dmyMatch[2], 10) - 1, parseInt(dmyMatch[1], 10));
+        } else {
+            const parsed = new Date(cleanDate);
+            if (!isNaN(parsed.getTime())) birthDate = parsed;
         }
 
         if (!birthDate || isNaN(birthDate.getTime())) return '';
@@ -291,14 +262,9 @@
         if (today.getDate() < birthDate.getDate()) totalMonths--;
 
         if (totalMonths <= 0) return '';
-
-        const years = Math.floor(totalMonths / 12);
-        const months = totalMonths % 12;
-
-        return `${years}.${months}`;
+        return (totalMonths / 12).toFixed(1);
     }
 
-    // 9. זיהוי האם מדובר בכיתת יש"ק או יש"ג
     function isYeshikOrYeshig(classStr) {
         if (!classStr) return false;
         const normalized = String(classStr).trim().toLowerCase().replace(/["״׳']/g, '"');
@@ -306,7 +272,6 @@
                normalized.includes('יש"ג') || normalized.includes('ישג');
     }
 
-    // 10. זיהוי האם התלמיד נמצא בכיתה גבוהה מחית (ט' ומעלה)
     function isHigherThanHet(classStr) {
         if (!classStr) return false;
         const s = String(classStr).trim().toLowerCase();
@@ -321,7 +286,6 @@
         return false;
     }
 
-    // 11. הלב המרכזי: יצירה והצגה דינמית של כרטיסיות התלמידים והצוות על המסך
     function displayStudents(students) {
         const listDiv = document.getElementById('studentsList');
         document.getElementById('resultsCount').innerText = `מציג ${students.length} תוצאות`;
@@ -368,21 +332,8 @@
             const idNum = cleanNumeric(rawId) || rawId;
 
             const birthHeb = person['תאריך לידה עברי'] || '';
-            
-            // חיפוש חכם ואוטומטי של עמודת תאריך הלידה בקובץ
-            let birthEng = '';
-            for (let key in person) {
-                if (key.includes('לידה') && !key.includes('עברי') && !key.includes('הורה')) {
-                    birthEng = person[key];
-                    break;
-                }
-            }
-            if (!birthEng) {
-                birthEng = person['תאריך לידה'] || person['תאריך לידה לועזי'] || person['ת. לידה'] || '';
-            }
-
-            const ageStr = calculateAge(birthEng); // חישוב הגיל בפועל
-
+            const birthEng = person['תאריך לידה'] || '';
+            const ageStr = calculateAge(birthEng);
             const address = person['כתובת'] || '';
             
             const phone = person['טלפון'] || '';
@@ -427,6 +378,22 @@
                 ? `<button class="siblings-btn" onclick="showSiblingsByParent('${safeDadId}', '${safeMomId}', '${safePhone}', '${safeDadMob}', '${safeMomMob}', 'משפחת ${safeLast}')">👨‍👩‍👧‍👦 הצג אחים</button>` 
                 : '';
 
+            // יצירת תגית גיל וכפתור אחים משולבים בשורה גמישה
+            let ageAndSiblingsHtml = '';
+            if (birthHeb || birthEng || ageStr || siblingsActionBtn) {
+                let innerContent = '';
+                if (birthHeb || birthEng) {
+                    innerContent += `${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''}`;
+                }
+                if (ageStr) {
+                    innerContent += ` <span class="badge-age">גיל: ${ageStr}</span>`;
+                }
+                if (siblingsActionBtn) {
+                    innerContent += ` ${siblingsActionBtn}`;
+                }
+                ageAndSiblingsHtml = `<div>🎂 <strong>תאריך לידה:</strong> <span class="birthdate-row">${innerContent}</span></div>`;
+            }
+
             item.innerHTML = `
                 <div class="${isStaff ? 'staff-header' : 'student-header'}">
                     <h3>
@@ -439,11 +406,10 @@
                 <div class="student-details">
                     ${classAndTeacher ? `<div>🏫 <strong>${isStaff ? 'תפקיד / כיתה:' : 'כיתה ומחנך:'}</strong> ${person['כיתה ומחנך']}</div>` : ''}
                     ${idNum ? `<div>🪪 <strong>ת.ז:</strong> ${idNum}</div>` : ''}
-                    ${(birthHeb || birthEng || ageStr) ? `<div>🎂 <strong>תאריך לידה:</strong> ${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''} ${ageStr ? '<span class="badge-age">גיל: ' + ageStr + '</span>' : ''}</div>` : ''}
+                    ${ageAndSiblingsHtml}
                     ${address ? `<div>🏠 <strong>כתובת:</strong> ${address}</div>` : ''}
-                    ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''} ${siblingsActionBtn}</div>` : ''}
-                    ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''} ${!dadName ? siblingsActionBtn : ''}</div>` : ''}
-                    ${!isStaff && !dadName && !momName && hasFamilyKey ? `<div>${siblingsActionBtn}</div>` : ''}
+                    ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''}</div>` : ''}
+                    ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''}</div>` : ''}
                     ${phonesHtml ? `<div class="phones-row">${phonesHtml}</div>` : ''}
                 </div>
             `;
@@ -451,12 +417,10 @@
         });
     }
 
-    // 12. ניקוי טקסט חיפוש והסרת תווים מיוחדים
     function normalizeSearchText(str) {
         return String(str || '').toLowerCase().replace(/["״׳']/g, '').replace(/\s+/g, ' ').trim();
     }
 
-    // 13. סינון וחיפוש תלמידים בזמן אמת לפי קריטריונים שונים
     function filterStudents() {
         document.getElementById('familyFilterBanner').style.display = 'none';
         const rawQuery = document.getElementById('searchInput').value;
@@ -493,7 +457,6 @@
         displayStudents(filtered);
     }
 
-    // 14. איפוס המערכת ומחיקת נתונים לטובת החלפת קובץ
     function resetApp() {
         if(confirm('האם אתה בטוח שברצונך להחליף קובץ? הנתונים הקודמים יוחלפו.')) {
             localStorage.removeItem('students_data');
@@ -506,7 +469,6 @@
 </script>
 
 <script>
-// 15. רישום Service Worker לתמיכה בעבודה אופליין מלאה
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.warn(err));
