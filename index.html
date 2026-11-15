@@ -19,11 +19,11 @@
         
         .staff-card { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(26,115,232,0.15); border-right: 5px solid #1a73e8; }
         .staff-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d2e3fc; padding-bottom: 8px; margin-bottom: 8px; }
-        .staff-header h3 { margin: 0; font-size: 1.2rem; color: #1a73e8; }
+        .staff-header h3 { margin: 0; font-size: 1.15rem; color: #1a73e8; display: flex; justify-content: space-between; align-items: center; width: 100%; }
 
         .student-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); border-right: 5px solid #34a853; }
         .student-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 8px; }
-        .student-header h3 { margin: 0; font-size: 1.15rem; color: #202124; }
+        .student-header h3 { margin: 0; font-size: 1.1rem; color: #202124; display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         .card-left { background: #fafafa !important; border-right: 5px solid #ea4335 !important; opacity: 0.85; }
         .card-left h3 { color: #5f6368 !important; }
@@ -31,12 +31,10 @@
         .card-higher-class { background: #fef7e0 !important; border-right: 5px solid #f9ab00 !important; }
         .card-higher-class h3 { color: #b06000 !important; }
 
-        .badge-status-left { background: #fce8e6; color: #c5221f; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
-        .badge-status-higher { background: #fef3d6; color: #b06000; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; font-weight: bold; margin-right: 8px; }
+        .badge-status-left { background: #fce8e6; color: #c5221f; padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; font-weight: bold; margin-left: 6px; }
+        .badge-status-higher { background: #fef3d6; color: #b06000; padding: 2px 6px; font-size: 0.7rem; border-radius: 4px; font-weight: bold; margin-left: 6px; }
         
-        /* עיצוב משודרג ומכווץ מעט לתגיות גיל וכפתור אחים כדי שיישבו באותה שורה */
-        .birthdate-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-        .badge-age { background: #e8f0fe; color: #1a73e8; padding: 2px 6px; font-size: 0.75rem; border-radius: 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
+        .badge-age { background: #e8f0fe; color: #1a73e8; padding: 2px 6px; font-size: 0.75rem; border-radius: 5px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
         .siblings-btn { background: #f1f3f4; color: #1a73e8; border: 1px solid #d2e3fc; padding: 2px 6px; border-radius: 5px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; }
         .siblings-btn:active { background: #d2e3fc; }
 
@@ -174,14 +172,32 @@
         reader.readAsArrayBuffer(file);
     }
 
+    // טיפול מדויק במספרי טלפון לפי הכללים שלך
+    function formatPhoneNumber(numStr) {
+        if (!numStr) return '';
+        // הסרת כל תו שאינו ספרה (כדי לטפל במקפים, סוגריים ורווחים)
+        let clean = String(numStr).trim().replace(/\D/g, '');
+        if (!clean) return '';
+        
+        // אם המספר מתחיל ב-2 (ולא ב-0), הוסף 0 בהתחלה (למשל 2580... יהפוך ל-02580...)
+        if (clean.startsWith('2') && !clean.startsWith('0')) {
+            clean = '0' + clean;
+        }
+        // אם המספר הוא באורך 7 ספרות בדיוק (ולא מתחיל ב-0), הוסף 02 בהתחלה
+        else if (clean.length === 7 && !clean.startsWith('0')) {
+            clean = '02' + clean;
+        }
+        return clean;
+    }
+
     function generatePhoneButtons(phoneStr, labelPrefix) {
         if (!phoneStr) return '';
         const numbers = String(phoneStr).split(/[\s,;]+/);
         let html = '';
         numbers.forEach(num => {
-            const cleanNum = num.trim();
-            if (cleanNum.length > 2) {
-                html += `<a href="tel:${cleanNum}" class="call-btn">📞 ${labelPrefix}: ${cleanNum}</a>`;
+            const formattedNum = formatPhoneNumber(num);
+            if (formattedNum.length > 2) {
+                html += `<a href="tel:${formattedNum}" class="call-btn">📞 ${labelPrefix}: ${num.trim()}</a>`;
             }
         });
         return html;
@@ -236,7 +252,21 @@
         displayStudents(allStudents);
     }
 
-    function calculateAge(birthDateStr) {
+    function detectAmericanDateFormat(studentsList) {
+        for (let person of studentsList) {
+            const dStr = String(person['תאריך לידה לועזי'] || person['תאריך לידה'] || '').trim();
+            const match = dStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
+            if (match) {
+                const first = parseInt(match[1], 10);
+                const second = parseInt(match[2], 10);
+                if (second > 12) return true;  
+                if (first > 12) return false;  
+            }
+        }
+        return false;
+    }
+
+    function calculateAge(birthDateStr, isAmericanFormat = false) {
         if (!birthDateStr) return '';
         const cleanDate = String(birthDateStr).trim();
         let birthDate = null;
@@ -247,9 +277,20 @@
         if (ymdMatch) {
             birthDate = new Date(parseInt(ymdMatch[1], 10), parseInt(ymdMatch[2], 10) - 1, parseInt(ymdMatch[3], 10));
         } else if (dmyMatch) {
+            let part1 = parseInt(dmyMatch[1], 10);
+            let part2 = parseInt(dmyMatch[2], 10);
             let year = parseInt(dmyMatch[3], 10);
             if (year < 100) year += year > 30 ? 1900 : 2000;
-            birthDate = new Date(year, parseInt(dmyMatch[2], 10) - 1, parseInt(dmyMatch[1], 10));
+
+            let day, month;
+            if (part2 > 12 || (isAmericanFormat && part1 <= 12)) {
+                month = part1;
+                day = part2;
+            } else {
+                day = part1;
+                month = part2;
+            }
+            birthDate = new Date(year, month - 1, day);
         } else {
             const parsed = new Date(cleanDate);
             if (!isNaN(parsed.getTime())) birthDate = parsed;
@@ -296,6 +337,8 @@
             return;
         }
 
+        const isAmerican = detectAmericanDateFormat(allStudents);
+
         const sortedStudents = [...students].sort((a, b) => {
             const statusA = String(a['סטטוס'] || '').trim();
             const statusB = String(b['סטטוס'] || '').trim();
@@ -332,8 +375,8 @@
             const idNum = cleanNumeric(rawId) || rawId;
 
             const birthHeb = person['תאריך לידה עברי'] || '';
-            const birthEng = person['תאריך לידה'] || '';
-            const ageStr = calculateAge(birthEng);
+            const birthEng = person['תאריך לידה לועזי'] || person['תאריך לידה'] || '';
+            const ageStr = calculateAge(birthEng, isAmerican);
             const address = person['כתובת'] || '';
             
             const phone = person['טלפון'] || '';
@@ -378,35 +421,31 @@
                 ? `<button class="siblings-btn" onclick="showSiblingsByParent('${safeDadId}', '${safeMomId}', '${safePhone}', '${safeDadMob}', '${safeMomMob}', 'משפחת ${safeLast}')">👨‍👩‍👧‍👦 הצג אחים</button>` 
                 : '';
 
-            // יצירת תגית גיל וכפתור אחים משולבים בשורה גמישה
-            let ageAndSiblingsHtml = '';
-            if (birthHeb || birthEng || ageStr || siblingsActionBtn) {
-                let innerContent = '';
-                if (birthHeb || birthEng) {
-                    innerContent += `${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''}`;
-                }
+            let birthdateDisplay = '';
+            if (birthHeb || birthEng || ageStr) {
+                birthdateDisplay = `${birthHeb} ${birthEng ? '(' + birthEng + ')' : ''}`;
                 if (ageStr) {
-                    innerContent += ` <span class="badge-age">גיל: ${ageStr}</span>`;
+                    birthdateDisplay += ` <span class="badge-age">גיל: ${ageStr}</span>`;
                 }
-                if (siblingsActionBtn) {
-                    innerContent += ` ${siblingsActionBtn}`;
-                }
-                ageAndSiblingsHtml = `<div>🎂 <strong>תאריך לידה:</strong> <span class="birthdate-row">${innerContent}</span></div>`;
             }
 
             item.innerHTML = `
                 <div class="${isStaff ? 'staff-header' : 'student-header'}">
                     <h3>
-                        ${isStaff ? '👨‍🏫 <strong>[איש צוות]</strong> ' : '👤 '} 
-                        ${fullName} 
-                        ${statusBadgeHtml}
-                        ${displayNum ? '<span style="font-size:0.8rem; color:#888;">(מס\': ' + displayNum + ')</span>' : ''}
+                        <span style="display:inline-flex; align-items:center; gap:6px;">
+                            ${isStaff ? '👨‍🏫 <strong>[איש צוות]</strong> ' : '👤 '} ${fullName}
+                            ${displayNum ? '<span style="font-size:0.8rem; color:#888;">(מס\': ' + displayNum + ')</span>' : ''}
+                            ${statusBadgeHtml}
+                        </span> 
+                        <span>
+                            ${siblingsActionBtn}
+                        </span>
                     </h3>
                 </div>
                 <div class="student-details">
                     ${classAndTeacher ? `<div>🏫 <strong>${isStaff ? 'תפקיד / כיתה:' : 'כיתה ומחנך:'}</strong> ${person['כיתה ומחנך']}</div>` : ''}
                     ${idNum ? `<div>🪪 <strong>ת.ז:</strong> ${idNum}</div>` : ''}
-                    ${ageAndSiblingsHtml}
+                    ${birthdateDisplay ? `<div>🎂 <strong>תאריך לידה:</strong> ${birthdateDisplay}</div>` : ''}
                     ${address ? `<div>🏠 <strong>כתובת:</strong> ${address}</div>` : ''}
                     ${!isStaff && dadName ? `<div>👨 <strong>אב:</strong> ${dadName} ${dadId ? '(ת.ז: ' + dadId + ')' : ''}</div>` : ''}
                     ${!isStaff && momName ? `<div>👩 <strong>אם:</strong> ${momName} ${momId ? '(ת.ז: ' + momId + ')' : ''}</div>` : ''}
